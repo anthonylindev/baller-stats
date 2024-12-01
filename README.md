@@ -2,13 +2,13 @@
 
 A web-app created to view and compare historical statistics of NBA players.
 
-🚀 WIP
-
+🚀 WIP\
+\
+⚙️ Data provided by https://www.balldontlie.io/
 ## Features
 
 - 📈 **Stats Lookup**: Look up historical stats and view visualizations for current and past NBA players.
-- 🩹 **Injury Data**: View live data on current NBA injuries (data identical to https://www.espn.com/nba/injuries) 
-  
+- 🩹 **Injury Data**: View live data on current NBA injuries (data identical to https://www.espn.com/nba/injuries)   
 ---
 
 ## Screenshots
@@ -21,7 +21,7 @@ Coming Soon
 
 - **[Vite](https://vite.dev/)**
 - **[Tailwind CSS](https://tailwindcss.com/)**
-
+- **[TanStack Query](https://tanstack.com/query/latest)**
 ---
 
 ## Installation
@@ -41,4 +41,4 @@ To set up the project locally, follow these steps:
     ```bash
    npm run dev
    ```
-4. Open [http://localhost:3000](http://localhost:5173) in your browser to see the result.
+4. Open [http://localhost:5173](http://localhost:5173) in your browser to see the result.
