@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
 import { PlayerStats } from '@/types'
 
 const getPlayerAverages = async (startSeason: number, playerId: number) => {
@@ -31,7 +31,7 @@ const getPlayerAverages = async (startSeason: number, playerId: number) => {
 
     if (!newSeasonData.length && !allSeasonData.length) continue
 
-    allSeasonData.push(newSeasonData[0])
+    allSeasonData.push(newSeasonData[0] || {})
     console.log('seasonData', newSeasonData)
   }
 
@@ -44,5 +44,19 @@ export const usePlayerAverages = (startSeason: number, playerId: number) => {
     queryFn: () => getPlayerAverages(startSeason, playerId),
     queryKey: ['player_averages', playerId],
     staleTime: Infinity
+  })
+}
+
+export const useCombinedAverages = (args: { startSeason: number, playerId: number }[]) => {
+  return useQueries({
+    queries: args.map(({ startSeason, playerId }) => ({
+      queryKey: ['player_averages', playerId],
+      queryFn: () => getPlayerAverages(startSeason, playerId),
+      staleTime: Infinity
+    })),
+    combine: (results) => ({
+      data: results.map(res => res.data),
+      pending: results.some((result) => result.isPending)
+    })
   })
 }

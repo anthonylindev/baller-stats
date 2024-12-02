@@ -9,9 +9,11 @@ import { PlayerWithTeam } from '@/types'
 
 interface SearchBarProps {
   onPlayerSelect: (player: PlayerWithTeam) => void
+  onPlayerCompare: (player: PlayerWithTeam) => void
+  enableCompare: boolean
 }
 
-export function SearchBar({ onPlayerSelect }: SearchBarProps) {
+export function SearchBar({ onPlayerSelect, onPlayerCompare, enableCompare }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [currCursor, setCurrCursor] = useState(null)
   const debouncedQuery = useDebouncedValue(query, 500)
@@ -19,8 +21,8 @@ export function SearchBar({ onPlayerSelect }: SearchBarProps) {
   console.log("debouncedQuery", debouncedQuery)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['players', debouncedQuery],
-    queryFn: () => getPlayersByQuery(debouncedQuery),
+    queryKey: ['players', debouncedQuery.trim()],
+    queryFn: () => getPlayersByQuery(debouncedQuery.trim()),
     enabled: !!debouncedQuery,
     // placeholderData: keepPreviousData,
   })
@@ -45,17 +47,20 @@ export function SearchBar({ onPlayerSelect }: SearchBarProps) {
           onChange={(e) => setQuery(e.target.value)}
           className="flex-grow"
         />
-        <Button type="submit">Search</Button>
       </form>
       {players && (
         <ul className="space-y-2">
           {players.map((player) => (
             <li
               key={player.id}
-              className="p-2 bg-accent rounded cursor-pointer hover:bg-accent-foreground/10"
+              className="p-4 bg-accent rounded cursor-pointer hover:bg-accent-foreground/10 flex justify-between items-center"
               onClick={() => onPlayerSelect(player)}
             >
-              <span className="text-primary">{player.first_name} {player.last_name}</span> - <span className="text-muted-foreground">{player.team.full_name}</span>
+              <div>
+                <span className="text-primary mr-2">{player.first_name} {player.last_name}</span>
+                <span className="text-muted-foreground">{player.team.full_name}</span>
+              </div>
+              <Button disabled={!enableCompare} onClick={() => onPlayerCompare(player)}>Compare</Button>
             </li>
           ))}
         </ul>
