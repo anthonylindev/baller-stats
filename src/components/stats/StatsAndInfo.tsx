@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { usePlayerAverages, useCombinedAverages } from '@/hooks/usePlayerAverages'
-import { PlayerWithTeam } from '@/types'
+import { PlayerStats, PlayerWithTeam } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LineChart, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer, Line } from 'recharts'
 
 interface PlayerStatsProps {
@@ -12,7 +13,17 @@ interface PlayerStatsProps {
 
 const colors = ['#716cd8', '#d86cbd', '#d89c6c', '#92d86c', '#6cd8c8'];
 
-export const PlayerStats: React.FC<PlayerStatsProps> = ({ player, players }) => {
+const statCategories: { value: keyof PlayerStats; label: string }[] = [
+  { value: 'pts', label: 'Points' },
+  { value: 'ast', label: 'Assists' },
+  { value: 'fg_pct', label: 'FG %' },
+  { value: 'min', label: 'Minutes' },
+  { value: 'reb', label: 'Rebounds' },
+  { value: 'fg3_pct', label: '3PT %' },
+  { value: 'fg3m', label: '3PT' },
+] as const
+
+export const StatsAndInfo: React.FC<PlayerStatsProps> = ({ player, players }) => {
 
   const { id, draft_year } = player
 
@@ -21,6 +32,8 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({ player, players }) => 
   const combinedQueryParams = players.map(player => ({ startSeason: player.draft_year || 2024, playerId: player.id }))
 
   const { data: combinedData } = useCombinedAverages(combinedQueryParams)
+
+  const [selectedStatCategory, setSelectedStatCategory] = useState<keyof PlayerStats>('pts')
 
   // console.log('PlayerStats', data, isLoading)
 
@@ -51,10 +64,10 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({ player, players }) => 
     while (i < maxLength) {
       const nextItem: Record<string, string | number> = { name: i + 1 }
       combinedData.forEach(playerSeason => {
-        if (playerSeason && playerSeason[i] && playerSeason[i].pts) {
-          nextItem[`pts-${playerSeason[i].player_id}`] = playerSeason[i].pts
-        } else {
-          // nextItem[`pts-${playerSeason[i].player_id}`] = 0
+        if (playerSeason && playerSeason[i] && playerSeason[i][selectedStatCategory]) {
+          nextItem[`${selectedStatCategory}-${playerSeason[i].player_id}`] = playerSeason[i][selectedStatCategory]
+        } else if (playerSeason && i < playerSeason?.length) {
+          nextItem[`${selectedStatCategory}-${playerSeason[i].player_id}`] = 0
         }
       })
       formattedCompareData.push(nextItem)
@@ -66,22 +79,40 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({ player, players }) => 
 
   const formattedCompareData = getFormattedCompareGraphData()
 
-  console.log(JSON.stringify(lineChartData))
+  // console.log(JSON.stringify(lineChartData))
+
+  const handleSelectCategory = (value: keyof PlayerStats) => [
+    setSelectedStatCategory(value)
+  ]
 
   return (
     <div>
       <PlayerInfo player={player} />
       <h1 className="text-2xl mb-4 mt-4">Player Stats</h1>
+      <div className="flex justify-between items-center mb-4">
+        <Select value={selectedStatCategory} onValueChange={handleSelectCategory}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select stat category" />
+          </SelectTrigger>
+          <SelectContent>
+            {statCategories.map((category) => (
+              <SelectItem key={category.value} value={category.value}>
+                {category.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <ResponsiveContainer height={300} width="100%">
         <LineChart
           data={formattedCompareData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 5, bottom: 5 }}
         >
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
           {players.map((player, index) => (
-            <Line key={player.id} type="monotone" dataKey={`pts-${player.id}`} stroke={`${colors[index]}`} />
+            <Line key={player.id} type="monotone" dataKey={`${selectedStatCategory}-${player.id}`} stroke={`${colors[index]}`} />
           ))}
           {/* <Line type="monotone" dataKey="value" stroke="#8884d8" /> */}
           <Legend formatter={(value) => {

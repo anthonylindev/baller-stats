@@ -31,7 +31,7 @@ const getPlayerAverages = async (startSeason: number, playerId: number) => {
 
     if (!newSeasonData.length && !allSeasonData.length) continue
 
-    allSeasonData.push(newSeasonData[0] || {})
+    allSeasonData.push(newSeasonData[0] || { player_id: playerId })
     console.log('seasonData', newSeasonData)
   }
 

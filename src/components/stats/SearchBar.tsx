@@ -1,19 +1,29 @@
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useQuery } from "@tanstack/react-query"
 import { getPlayersByQuery } from '@/api/players'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { PlayerWithTeam } from '@/types'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface SearchBarProps {
   onPlayerSelect: (player: PlayerWithTeam) => void
-  onPlayerCompare: (player: PlayerWithTeam) => void
-  enableCompare: boolean
+  onPlayerAdd: (player: PlayerWithTeam) => void
+  onPlayerRemove: (player: PlayerWithTeam) => void
+  selectedPlayers: PlayerWithTeam[]
 }
 
-export function SearchBar({ onPlayerSelect, onPlayerCompare, enableCompare }: SearchBarProps) {
+export function SearchBar({ onPlayerSelect, onPlayerAdd, onPlayerRemove, selectedPlayers }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [currCursor, setCurrCursor] = useState(null)
   const debouncedQuery = useDebouncedValue(query, 500)
@@ -28,44 +38,84 @@ export function SearchBar({ onPlayerSelect, onPlayerCompare, enableCompare }: Se
   })
 
   const players = data?.data
+  const validPlayers = players?.filter(player => !!player.draft_year)
 
   console.log('search', debouncedQuery, data, isLoading)
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // The query will automatically run when the query is longer than 2 characters
-  }
-
   return (
-    <div className="mb-6">
-      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+    <div className="flex flex-col h-full">
+      <div className='mb-4'>
         <Input
           type="text"
           placeholder="Search for a player..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="flex-grow"
+          className="w-full"
         />
-      </form>
-      {players && (
-        <ul className="space-y-2">
-          {players.map((player) => (
-            <li
-              key={player.id}
-              className="p-4 bg-accent rounded cursor-pointer hover:bg-accent-foreground/10 flex justify-between items-center"
-              onClick={() => onPlayerSelect(player)}
-            >
-              <div>
-                <span className="text-primary mr-2">{player.first_name} {player.last_name}</span>
-                <span className="text-muted-foreground">{player.team.full_name}</span>
-              </div>
-              <Button disabled={!enableCompare} onClick={() => onPlayerCompare(player)}>Compare</Button>
-            </li>
-          ))}
-        </ul>
-      )}
+      </div>
+      <ScrollArea className="flex-grow" type='auto'>
+        {isLoading ? (
+          <p className="text-center text-muted-foreground">Loading...</p>
+        ) : validPlayers?.length ? (
+          <div className='space-y-4'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="hidden sm:table-cell">Team</TableHead>
+                  <TableHead className="hidden md:table-cell">Draft Year</TableHead>
+                  <TableHead className="w-24">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {validPlayers.map((player) => (
+                  <SearchTableRow
+                    key={player.id}
+                    player={player}
+                    isAdded={selectedPlayers?.some(selectedPlayer => selectedPlayer.id === player.id)}
+                    onPlayerAdd={onPlayerAdd}
+                    onPlayerRemove={onPlayerRemove}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : debouncedQuery.length ? (
+          <p className="text-center text-muted-foreground">No results found</p>
+        ) : null}
+      </ScrollArea>
     </div>
   )
 }
 
+const SearchTableRow: React.FC<{
+  player: PlayerWithTeam, isAdded: boolean; onPlayerAdd: (player: PlayerWithTeam) => void
+  onPlayerRemove: (player: PlayerWithTeam) => void
+}> = ({ player, isAdded, onPlayerAdd, onPlayerRemove }) => {
+
+  const handleAction = () => {
+    if (isAdded) {
+      onPlayerRemove(player)
+    } else {
+      onPlayerAdd(player)
+    }
+  }
+
+  return (
+    <TableRow className="text-start w-full">
+      <TableCell>{player.first_name} {player.last_name}</TableCell>
+      <TableCell className="hidden sm:table-cell">{player.team.full_name}</TableCell>
+      <TableCell className="hidden md:table-cell">{player.draft_year}</TableCell>
+      <TableCell className=''>
+        <div className='flex justify-end mr-4'>
+          <Button
+            onClick={handleAction}
+            className='w-24'
+          >
+            {`${isAdded ? 'Remove' : 'Add'}`}
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}

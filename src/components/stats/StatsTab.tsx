@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SearchBar } from './SearchBar'
-import { PlayerStats } from './PlayerStats'
+import { StatsAndInfo } from './StatsAndInfo'
 import { PlayerWithTeam } from '@/types'
 
 
@@ -18,21 +18,28 @@ export const StatsTab = () => {
     }
   }
 
-  const onPlayerCompare = (player: PlayerWithTeam) => {
+  const onPlayerAdd = (player: PlayerWithTeam) => {
+    setSelectedPlayer(player)
     setSelectedPlayers(prev => [...prev, player])
   }
 
+  const onPlayerRemove = (player: PlayerWithTeam) => {
+    setSelectedPlayers(prev => prev.filter(p => p.id !== player.id))
+  }
+
   return (
-    <>
-      <SearchBar onPlayerSelect={onPlayerSelect} onPlayerCompare={onPlayerCompare} enableCompare={!!selectedPlayers.length} />
+    <div className='space-y-4'>
+      <div className='h-[400px] flex flex-col'>
+        <SearchBar onPlayerSelect={onPlayerSelect} onPlayerAdd={onPlayerAdd} onPlayerRemove={onPlayerRemove} selectedPlayers={selectedPlayers} />
+      </div>
       {selectedPlayer ?
-        <PlayerStats player={selectedPlayer} players={selectedPlayers} /> : (
+        <StatsAndInfo player={selectedPlayer} players={selectedPlayers} /> : (
           <div>
             <h1>
               Select a player to view stats
             </h1>
           </div>
         )}
-    </>
+    </div>
   )
 }
