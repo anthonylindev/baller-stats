@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useQuery } from "@tanstack/react-query"
-import { getPlayersByQuery } from '@/api/players'
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
+import { getPlayersByQuery, getPlayers } from '@/api/players'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { PlayerWithTeam } from '@/types'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -25,20 +25,22 @@ interface SearchBarProps {
 
 export function SearchBar({ onPlayerSelect, onPlayerAdd, onPlayerRemove, selectedPlayers }: SearchBarProps) {
   const [query, setQuery] = useState('')
-  const [currCursor, setCurrCursor] = useState(null)
   const debouncedQuery = useDebouncedValue(query, 500)
 
   console.log("debouncedQuery", debouncedQuery)
 
-  const { data, isLoading } = useQuery({
+  const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['players', debouncedQuery.trim()],
-    queryFn: () => getPlayersByQuery(debouncedQuery.trim()),
+    queryFn: ({ pageParam }) => getPlayersByQuery(debouncedQuery.trim(), pageParam),
     enabled: !!debouncedQuery,
-    // placeholderData: keepPreviousData,
+    getNextPageParam: (lastPage) => lastPage.meta.next_cursor,
+    initialPageParam: 0,
   })
 
-  const players = data?.data
-  const validPlayers = players?.filter(player => !!player.draft_year)
+  console.log('infiniteSearch results', data, data?.pages.flatMap(page => page.data))
+
+  const players = data?.pages.flatMap(page => page.data)
+  const validPlayers = players?.filter(player => !!player.draft_year) || []
 
   console.log('search', debouncedQuery, data, isLoading)
 
@@ -79,8 +81,9 @@ export function SearchBar({ onPlayerSelect, onPlayerAdd, onPlayerRemove, selecte
                 ))}
               </TableBody>
             </Table>
+            {(hasNextPage && !isFetchingNextPage) && <Button onClick={() => fetchNextPage()}>Load More</Button>}
           </div>
-        ) : debouncedQuery.length ? (
+        ) : debouncedQuery?.length ? (
           <p className="text-center text-muted-foreground">No results found</p>
         ) : null}
       </ScrollArea>

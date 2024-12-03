@@ -29,7 +29,7 @@ export const StatsTab = () => {
 
   return (
     <div className='space-y-4'>
-      <div className='h-[400px] flex flex-col'>
+      <div className='h-[400px] flex flex-col border-solid rounded border p-4 '>
         <SearchBar onPlayerSelect={onPlayerSelect} onPlayerAdd={onPlayerAdd} onPlayerRemove={onPlayerRemove} selectedPlayers={selectedPlayers} />
       </div>
       {selectedPlayer ?
